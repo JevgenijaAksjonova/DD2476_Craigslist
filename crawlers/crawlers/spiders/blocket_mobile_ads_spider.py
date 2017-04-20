@@ -13,7 +13,21 @@ class BlocketSpider(scrapy.Spider):
 
     def parse(self, response):
         for row in response.css('.item_row'):
-            #$print(row.extract())
-            for title in row.css('h1.media-heading'):
-                yield {'title': title.css('a ::text').extract_first()}
-        #print(response.body)
+            try:
+                title_h1 = row.css('h1.media-heading')
+                title = title_h1.css('a ::text').extract_first()
+                price = (row.css('p.list_price ::text').extract_first()).replace(" ", "")[:-2] # Remove whitespaces and :-
+                obj = {
+                        'title': title,
+                        'price': price
+                        }
+                print(obj) # This should be served to elasticsearch
+            except AttributeError:
+                pass
+
+        next_page = response.xpath('//ul[@id="all_pages"]/li[contains(.,"Nästa")]/a/@href').extract_first()
+        print(next_page)
+        if next_page is not None:
+            next_page = response.urljoin(next_page)
+            print(next_page)
+            yield scrapy.Request(next_page, callback=self.parse)
