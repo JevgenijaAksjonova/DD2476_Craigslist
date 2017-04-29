@@ -3,10 +3,11 @@ import scrapy
 
 class BlocketSpider(scrapy.Spider):
     name = "blocket_mobile"
-
+    
     def start_requests(self):
         urls = [
-            'https://www.blocket.se/stockholm?q=&cg=5060&w=3&st=s&c=&ca=11&is=1&l=0&md=th',
+#            'https://www.blocket.se/stockholm?q=&cg=5060&w=3&st=s&c=&ca=11&is=1&l=0&md=th',
+            'https://www.blocket.se/stockholm/telefoner_tillbehor/telefoner?cg=5060&w=1&st=s&ca=11&is=1&l=0&md=th&c=5061',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
@@ -22,6 +23,7 @@ class BlocketSpider(scrapy.Spider):
                         'price': price
                         }
                 print(obj) # This should be served to elasticsearch
+                yield obj
             except AttributeError:
                 pass
 
