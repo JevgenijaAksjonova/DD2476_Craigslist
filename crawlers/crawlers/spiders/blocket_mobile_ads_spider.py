@@ -17,10 +17,13 @@ class BlocketSpider(scrapy.Spider):
             try:
                 title_h1 = row.css('h1.media-heading')
                 title = title_h1.css('a ::text').extract_first()
+                url = title_h1.css('a::attr(href)').extract_first()
+                uid = url.split('?')[-2].split('.htm')[-2].split('_')[-1]
                 price = (row.css('p.list_price ::text').extract_first()).replace(" ", "")[:-2] # Remove whitespaces and :-
                 obj = {
                         'title': title,
-                        'price': price
+                        'price': price,
+                        'uid'  : uid,
                         }
                 print(obj) # This should be served to elasticsearch
                 yield obj

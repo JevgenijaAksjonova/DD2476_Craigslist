@@ -65,8 +65,9 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-#    'crawlers.pipelines.CrawlersPipeline': 300,
-    'crawlers.pipelines.ElasticsearchPipeline':500,
+##    'crawlers.pipelines.CrawlersPipeline': 300,
+#    'crawlers.pipelines.ElasticsearchPipeline':500,
+#    'crawlers.pipelines.UIDcheckPipeline' : 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -93,6 +94,6 @@ ITEM_PIPELINES = {
 
 # settings for elasticsearch
 ELASTIC_SETTINGS = {
-        'host': "localhost",
+        'host': "tvesovla.asuscomm.com",
         'port': 9200
         }
