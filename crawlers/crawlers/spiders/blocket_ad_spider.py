@@ -1,8 +1,10 @@
 import scrapy
+import re
 
 
 class BlocketSpider(scrapy.Spider):
-    name = "blocket_mobile"
+    name = "blocket_mobile_with_text"
+    whitespace = re.compile(r'[^\S ]+')
     
     def start_requests(self):
         urls = [
@@ -17,48 +19,50 @@ class BlocketSpider(scrapy.Spider):
         data_application_name = response.xpath('//body/@data-application-name').extract_first()
         # if it is the list view
         if data_application_name == "list_ads":
-            row = response.css('.item_row')[0]
-        
-            try:
-                title_h1 = row.css('h1.media-heading')
-                title = title_h1.css('a ::text').extract_first()
-                url = title_h1.css('a::attr(href)').extract_first()
-                if url is not None:
-                    yield scrapy.Request(url=url, callback=self.parse)
-            except AttributeError:
-                pass
+            for row in response.css('.item_row'):
+                try:
+                    title_h1 = row.css('h1.media-heading')
+                    url = title_h1.css('a::attr(href)').extract_first()
+                    if url is not None:
+                        yield scrapy.Request(url=url, callback=self.parse)
+                except AttributeError:
+                    pass
+
+            # Yield the next page of listed ads
+            next_page = response.xpath('//ul[@id="all_pages"]/li[contains(.,"Nästa")]/a/@href').extract_first()
+            print(next_page)
+            if next_page is not None:
+                next_page = response.urljoin(next_page)
+                print(next_page)
+                yield scrapy.Request(next_page, callback=self.parse)
+
         elif data_application_name == "view_ad":
 
-            uid = response.url.split('?')[-2].split('.htm')[-2].split('_')[-1]
-            main = response.css('main')
-
-            title = main.css('h1.subject_medium::text').extract_first()
-            seller_info = main.xpath('//ul[@id="seller_info"]/')[0]
-            publish_date = seller_info.xpath('//time/@datetime').extract_first()
-            author = seller_info.xpath('//strong/text()')
-            
-
-
-        for row in response.css('.item_row'):
             try:
-                title_h1 = row.css('h1.media-heading')
-                title = title_h1.css('a ::text').extract_first()
-                url = title_h1.css('a::attr(href)').extract_first()
-                uid = url.split('?')[-2].split('.htm')[-2].split('_')[-1]
-                price = (row.css('p.list_price ::text').extract_first()).replace(" ", "")[:-2] # Remove whitespaces and :-
-                obj = {
+                uid = response.url.split('?')[-2].split('.htm')[-2].split('_')[-1]
+                main = response.css('main')
+
+                header = main.xpath('.//header[@class="row"]')
+                title = main.css('h1.h3::text').extract_first().strip()
+                publish_date = header.xpath('.//time/@datetime').extract_first()
+                price = header.xpath('.//div[@id="vi_price"]/text()').extract_first()
+                price = price.strip()[:-2].replace(" ", "") # remove all whitespace and :-
+                ad_texts = main.xpath('//div[contains(@class,"body")]/text()').extract() # get text fragments
+                ad_texts = [self.whitespace.sub(" ", a.strip()) for a in ad_texts] # remove unnecessary whitespace
+                ad_texts = [a for a in ad_texts if not a == ""] # filter out empty strings
+                ad_text = "\n".join(ad_texts) # join the text fragments with a new line between each
+                item = {
+                        'uid': uid,
                         'title': title,
                         'price': price,
-                        'uid'  : uid,
+                        'datetime': publish_date,
+                        'ad_text': ad_text
                         }
-                print(obj) # This should be served to elasticsearch
-                yield obj
+
+                yield item
+
+
             except AttributeError:
                 pass
 
-        next_page = response.xpath('//ul[@id="all_pages"]/li[contains(.,"Nästa")]/a/@href').extract_first()
-        print(next_page)
-        if next_page is not None:
-            next_page = response.urljoin(next_page)
-            print(next_page)
-            yield scrapy.Request(next_page, callback=self.parse)
+
