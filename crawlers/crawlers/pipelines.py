@@ -6,6 +6,7 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 from elasticsearch import Elasticsearch
+import googlemaps
 import time
 
 
@@ -37,7 +38,7 @@ class ElasticsearchPipeline(object):
             self.es.indices.create(index=self.index_name)
         else:
             if not self.es.indices.exists(index=self.index_name):
-                self.es.indeces.create(index=self.index_name)
+                self.es.indices.create(index=self.index_name)
 
     def process_item(self, item, spider):
 
@@ -46,6 +47,34 @@ class ElasticsearchPipeline(object):
         del item['uid']
         print("The uid is:", uid)
         self.es.index(index=self.index_name, id=uid, body=item, doc_type="blocket_ad")
+
+        return item
+
+class GoogleMapsPipeline(object):
+    # api-key: AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0
+    
+    def __init__(self, api_key = None):
+        self.api_key = api_key
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        api_settings = crawler.settings.get('GOOGLEMAPS')
+
+        return cls( api_settings['api_key'])
+
+    def open_spider(self, spider):
+        self.gm = googlemaps.Client(key=self.api_key)
+
+    def process_item( self, item, spider ):
+
+        if item['loc_name']:
+            geocode = self.gm.geocode(item['loc_name']+', Sweden')
+            longlat = geocode[0]['geometry']['location']
+
+            if longlat:
+                longlat['lon'] = longlat['lng']
+                del longlat['lng']
+                item['geo_point'] = longlat
 
         return item
 

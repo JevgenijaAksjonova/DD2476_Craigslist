@@ -66,7 +66,8 @@ ROBOTSTXT_OBEY = False
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
 ##    'crawlers.pipelines.CrawlersPipeline': 300,
-#    'crawlers.pipelines.ElasticsearchPipeline':500,
+#    'crawlers.pipelines.GoogleMapsPipeline':450,
+    'crawlers.pipelines.ElasticsearchPipeline':500,
 #    'crawlers.pipelines.UIDcheckPipeline' : 400,
 }
 
@@ -95,5 +96,10 @@ ITEM_PIPELINES = {
 # settings for elasticsearch
 ELASTIC_SETTINGS = {
         'host': "tvesovla.asuscomm.com",
-        'port': 9200
+        'port': 9200,
+        'index_name':"blocket_maps_test",
+        }
+
+GOOGLEMAPS = {
+        'api_key' : "AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0"
         }

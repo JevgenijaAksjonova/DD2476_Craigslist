@@ -5,11 +5,12 @@ import re
 class BlocketSpider(scrapy.Spider):
     name = "blocket_mobile_with_text"
     whitespace = re.compile(r'[^\S ]+')
+    parenthesis = re.compile(r'[()]')
     
     def start_requests(self):
         urls = [
-#            'https://www.blocket.se/stockholm?q=&cg=5060&w=3&st=s&c=&ca=11&is=1&l=0&md=th',
-            'https://www.blocket.se/stockholm/telefoner_tillbehor/telefoner?cg=5060&w=1&st=s&ca=11&is=1&l=0&md=th&c=5061',
+            'https://www.blocket.se/stockholm?q=&cg=5060&w=3&st=s&c=&ca=11&is=1&l=0&md=th',
+#            'https://www.blocket.se/stockholm/telefoner_tillbehor/telefoner?cg=5060&w=1&st=s&ca=11&is=1&l=0&md=th&c=5061',
         ]
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
@@ -38,31 +39,31 @@ class BlocketSpider(scrapy.Spider):
 
         elif data_application_name == "view_ad":
 
-            try:
-                uid = response.url.split('?')[-2].split('.htm')[-2].split('_')[-1]
-                main = response.css('main')
+            uid = int(response.url.split('?')[-2].split('.htm')[-2].split('_')[-1])
+            main = response.css('main')
 
-                header = main.xpath('.//header[@class="row"]')
-                title = main.css('h1.h3::text').extract_first().strip()
-                publish_date = header.xpath('.//time/@datetime').extract_first()
-                price = header.xpath('.//div[@id="vi_price"]/text()').extract_first()
-                price = price.strip()[:-2].replace(" ", "") # remove all whitespace and :-
-                ad_texts = main.xpath('//div[contains(@class,"body")]/text()').extract() # get text fragments
-                ad_texts = [self.whitespace.sub(" ", a.strip()) for a in ad_texts] # remove unnecessary whitespace
-                ad_texts = [a for a in ad_texts if not a == ""] # filter out empty strings
-                ad_text = "\n".join(ad_texts) # join the text fragments with a new line between each
-                item = {
-                        'uid': uid,
-                        'title': title,
-                        'price': price,
-                        'datetime': publish_date,
-                        'ad_text': ad_text
-                        }
+            header = main.xpath('.//header[@class="row"]')
+            title = main.css('h1.h3::text').extract_first().strip()
+            publish_date = header.xpath('.//time/@datetime').extract_first()
+            price = header.xpath('.//div[@id="vi_price"]/text()').extract_first()
+            price = int(price.strip()[:-2].replace(" ", "")) # remove all whitespace and :- and convert to integer
+            ad_texts = main.xpath('//div[contains(@class,"body")]/text()').extract() # get text fragments
+            ad_texts = [self.whitespace.sub(" ", a.strip()) for a in ad_texts] # remove unnecessary whitespace
+            ad_texts = [a for a in ad_texts if not a == ""] # filter out empty strings
+            ad_text = "\n".join(ad_texts) # join the text fragments with a new line between each
+            location = header.xpath('.//span[@class="area_label"]/text()').extract_first()
+            location = location.strip()[1:-1] # remove prefix and suffix whitespace and parenthesis around location name
+            item = {
+                    'uid': uid,
+                    'title': title,
+                    'price': price,
+                    'datetime': publish_date,
+                    'ad_text': ad_text,
+                    'loc_name':location,
+                    }
 
-                yield item
+            yield item
 
 
-            except AttributeError:
-                pass
 
 
