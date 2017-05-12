@@ -8,6 +8,7 @@
 from elasticsearch import Elasticsearch
 import googlemaps
 import time
+import re
 
 
 class CrawlersPipeline(object):
@@ -77,6 +78,23 @@ class GoogleMapsPipeline(object):
                 item['geo_point'] = longlat
 
         return item
+
+class FilterPipeline(object):
+
+    def __init__(self):
+        self.pattern = re.compile('\d+\s*([kK][rR]|:-)')
+
+    def process_item(self, item, spider):
+
+        if item['ad_text']:
+            txt = item['ad_text']
+            matches = self.pattern.findall(txt)
+            if len(matches) >= 3:
+                # If more than 3 price tags in the ad text, skip that ad
+                return None
+            else:
+                return item
+
 
 class UIDcheckPipeline(object):
 

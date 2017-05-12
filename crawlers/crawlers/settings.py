@@ -66,6 +66,7 @@ ROBOTSTXT_OBEY = False
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
 ##    'crawlers.pipelines.CrawlersPipeline': 300,
+#    'crawlers.pipelines.FilterPipeline':350,
 #    'crawlers.pipelines.GoogleMapsPipeline':450,
     'crawlers.pipelines.ElasticsearchPipeline':500,
 #    'crawlers.pipelines.UIDcheckPipeline' : 400,
