@@ -15,6 +15,9 @@ class BlocketSpider(scrapy.Spider):
         for url in urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
+    # TODO
+    # extract the url
+
     def parse(self, response):
 
         data_application_name = response.xpath('//body/@data-application-name').extract_first()
@@ -39,30 +42,50 @@ class BlocketSpider(scrapy.Spider):
 
         elif data_application_name == "view_ad":
 
-            uid = int(response.url.split('?')[-2].split('.htm')[-2].split('_')[-1])
-            main = response.css('main')
+            try:
+                uid = int(response.url.split('?')[-2].split('.htm')[-2].split('_')[-1])
+                main = response.css('main')
 
-            header = main.xpath('.//header[@class="row"]')
-            title = main.css('h1.h3::text').extract_first().strip()
-            publish_date = header.xpath('.//time/@datetime').extract_first()
-            price = header.xpath('.//div[@id="vi_price"]/text()').extract_first()
-            price = int(price.strip()[:-2].replace(" ", "")) # remove all whitespace and :- and convert to integer
-            ad_texts = main.xpath('//div[contains(@class,"body")]/text()').extract() # get text fragments
-            ad_texts = [self.whitespace.sub(" ", a.strip()) for a in ad_texts] # remove unnecessary whitespace
-            ad_texts = [a for a in ad_texts if not a == ""] # filter out empty strings
-            ad_text = "\n".join(ad_texts) # join the text fragments with a new line between each
-            location = header.xpath('.//span[@class="area_label"]/text()').extract_first()
-            location = location.strip()[1:-1] # remove prefix and suffix whitespace and parenthesis around location name
-            item = {
-                    'uid': uid,
-                    'title': title,
-                    'price': price,
-                    'datetime': publish_date,
-                    'ad_text': ad_text,
-                    'loc_name':location,
-                    }
+                # Many of the interesting values are located in the header element
+                header = main.xpath('.//header[@class="row"]')
 
-            yield item
+                # Extracting the title of the ad
+                title = main.css('h1.h3::text').extract_first().strip()
+
+                # Extract the publishing date of the ad
+                publish_date = header.xpath('.//time/@datetime').extract_first()
+
+                # Extract the price
+                price = header.xpath('.//div[@id="vi_price"]/text()').extract_first()
+                price = int(price.strip()[:-2].replace(" ", "")) # remove all whitespace and :- and convert to integer
+
+                # Extract the ad text
+                ad_texts = main.xpath('//div[contains(@class,"body")]/text()').extract() # get text fragments
+                ad_texts = [self.whitespace.sub(" ", a.strip()) for a in ad_texts] # remove unnecessary whitespace
+                ad_texts = [a for a in ad_texts if not a == ""] # filter out empty strings
+                ad_text = "\n".join(ad_texts) # join the text fragments with a new line between each
+
+                # Physical location name of ad poster
+                location = header.xpath('.//span[@class="area_label"]/text()').extract_first()
+                location = location.strip()[1:-1] # remove prefix and suffix whitespace and parenthesis around location name
+
+                # Is it a company ad?
+                company_ad_int = int(response.xpath("//script/text()").re(r"company_ad: (\d)")[0])
+                company_ad = True if company_ad_int == 1 else False
+                item = {
+                        'url': response.url,
+                        'uid': uid,
+                        'title': title,
+                        'price': price,
+                        'datetime': publish_date,
+                        'ad_text': ad_text,
+                        'loc_name':location,
+                        'company_ad': company_ad,
+                        }
+
+                yield item
+            except AttributeError:
+                pass
 
 
 

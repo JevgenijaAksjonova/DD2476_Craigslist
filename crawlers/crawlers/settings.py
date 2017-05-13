@@ -66,7 +66,8 @@ ROBOTSTXT_OBEY = False
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
 ##    'crawlers.pipelines.CrawlersPipeline': 300,
-#    'crawlers.pipelines.GoogleMapsPipeline':450,
+    'crawlers.pipelines.GoogleMapsPipeline':450,
+#    'crawlers.pipelines.GoogleMapsSubstitutePipeline':450,
     'crawlers.pipelines.ElasticsearchPipeline':500,
 #    'crawlers.pipelines.UIDcheckPipeline' : 400,
 }
@@ -97,9 +98,54 @@ ITEM_PIPELINES = {
 ELASTIC_SETTINGS = {
         'host': "tvesovla.asuscomm.com",
         'port': 9200,
-        'index_name':"blocket_maps_test",
+#        'index_name':"",
+        'index_prop' : { # Index properties for the new index
+            "mappings": {
+                "blocket_ad": {
+                    "properties": {
+                        "ad_text": {
+                            "type": "text"
+                            },
+                        "datetime": {
+                            "type" : "date"
+                            },
+                        "price" : {
+                            "type" : "long"
+                            },
+                        "title": {
+                            "type": "text",
+                            "fields": {
+                                "keyword": {
+                                    "type": "keyword",
+                                    "ignore_above": 256
+                                    }
+                                }
+                            },
+                        "loc_name": {
+                            "type": "text",
+                            "fields": {
+                                "keyword": {
+                                    "type": "keyword",
+                                    "ignore_above": 256
+                                    }
+                                }
+                            },
+                        "location": {
+                            "type" : "geo_point"
+                            },
+                        "company_ad": {
+                            "type": "boolean"
+                            },
+                        "url": {
+                            "type": "text"
+                            }
+                        }
+                    }
+                }
+            }
         }
 
 GOOGLEMAPS = {
-        'api_key' : "AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0"
+        'api_key' : "AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0",
+        'loc_dict_filename': "location_dictionary"
         }
