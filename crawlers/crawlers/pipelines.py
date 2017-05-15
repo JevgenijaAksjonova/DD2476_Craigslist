@@ -10,6 +10,7 @@ import googlemaps
 import time
 import pickle
 import pprint
+import re
 
 
 class CrawlersPipeline(object):
@@ -84,8 +85,10 @@ class GoogleMapsPipeline(object):
             print("#######################################################################\
                     THE LOCATION DICT HAS BEEN OPENED \
                     #############################")
+            input()
         except (FileNotFoundError,AttributeError, EOFError, IndexError, ImportError, pickle.UnpicklingError) as e:
             self.loc_dict = {}
+            input()
         self.f = open("unknown_locations.txt", "w")
 
         if self.loc_dict is None:
@@ -145,6 +148,23 @@ class GoogleMapsSubstitutePipeline(object):
 
         item['location'] = geo_point
         return item
+
+class FilterPipeline(object):
+
+    def __init__(self):
+        self.pattern = re.compile('\d+\s*([kK][rR]|:-)')
+
+    def process_item(self, item, spider):
+
+        if item['ad_text']:
+            txt = item['ad_text']
+            matches = self.pattern.findall(txt)
+            if len(matches) >= 3:
+                # If more than 3 price tags in the ad text, skip that ad
+                return None
+            else:
+                return item
+
 
 class UIDcheckPipeline(object):
 

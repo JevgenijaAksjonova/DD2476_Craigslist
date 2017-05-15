@@ -68,6 +68,7 @@ ITEM_PIPELINES = {
 ##    'crawlers.pipelines.CrawlersPipeline': 300,
     'crawlers.pipelines.GoogleMapsPipeline':450,
 #    'crawlers.pipelines.GoogleMapsSubstitutePipeline':450,
+#    'crawlers.pipelines.FilterPipeline':350,
     'crawlers.pipelines.ElasticsearchPipeline':500,
 #    'crawlers.pipelines.UIDcheckPipeline' : 400,
 }
@@ -98,13 +99,38 @@ ITEM_PIPELINES = {
 ELASTIC_SETTINGS = {
         'host': "tvesovla.asuscomm.com",
         'port': 9200,
-#        'index_name':"",
+        'index_name':"blocket_new_anlyzers_without_filtering",
         'index_prop' : { # Index properties for the new index
+            "settings": {
+                "analysis": {
+                    "analyzer": {
+                        "patterns_analyzer": {
+                            "tokenizer": "patterns_tokenizer",
+                            "filter": ["lowercase", "spacefilter"]
+                            }
+                        },
+                    "tokenizer": {
+                        "patterns_tokenizer": {
+                            "type": "pattern",
+                            "pattern": "([0-9]+[ ]*[Kk][Rr])|([0-9]+[ ]*[Gg][Bb])|([0-9]+([.,:/][0-9]+)+)|([0-9]+[a-zA-z+]+)|([0-9]+)|([a-z,A-Z]+)",
+                            "group": 0
+                            }
+                        },
+                    "filter": {
+                        "spacefilter": {
+                            "type": "pattern_replace",
+                            "pattern": " ",
+                            "replacement": ""
+                            }
+                        }
+                    }
+                },
             "mappings": {
                 "blocket_ad": {
                     "properties": {
                         "ad_text": {
-                            "type": "text"
+                            "type": "text",
+                            "analyzer": "patterns_analyzer"
                             },
                         "datetime": {
                             "type" : "date"
@@ -114,6 +140,7 @@ ELASTIC_SETTINGS = {
                             },
                         "title": {
                             "type": "text",
+                            "analyzer" : "patterns_analyzer",
                             "fields": {
                                 "keyword": {
                                     "type": "keyword",

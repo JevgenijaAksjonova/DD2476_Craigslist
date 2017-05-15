@@ -6,18 +6,18 @@ import googlemaps
 
 class reindex_iterator:
 
-    def __init__( self, es, old_index_name, new_index_name, index_prop ):
+    def __init__( self, es, old_index_name, new_index_name, index_prop, item_processor ):
         self.es = es
         self.old_index_name = old_index_name
         self.new_index_name = new_index_name
         self.new_index_properties = index_prop
-
-        self.loc_dict = {}
+        self.item_processor = item_processor
+#        self.loc_dict = {}
 
         self.f = open("error_file.txt", "w")
 
         # api-key: AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0
-        self.gm = googlemaps.Client(key="AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0")
+        #self.gm = googlemaps.Client(key="AIzaSyA9d-hRcRfnfSDzd709zmQJORutp96n9r0")
 
         if not self.es.indices.exists(index=self.new_index_name):
             self.es.indices.create(index=self.new_index_name, body=self.new_index_properties)
@@ -48,17 +48,11 @@ class reindex_iterator:
             doc_type = document_item['_type']
             item = document_item['_source']
 
-            item = self.process_item(item, docid, doc_type)
+            doc_item = self.item_processor.process(document_item)
+#            item = self.process_item(item, docid, doc_type)
 
-            if not item is None:
-
-                document = {
-                        "_id" : docid,
-                        "_type" : doc_type,
-                        "_source" : item
-                        }
-
-                yield document
+            if not doc_item is None:
+                yield doc_item 
 
     def process_item(self, item, docid, doc_type):
 
