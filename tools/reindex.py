@@ -7,10 +7,11 @@ port = 9200
 es = Elasticsearch([{'host': host, 'port': port}])
 
 #old_name = "blocket_company_ad_test"
-old_name = "blocket_reindex_test"
-new_name = "blocket_reindex_test_with_new_tokenizers"
+old_name = "blocket_new_analyzers"
+new_name = "blocket_new_analyzers_url_fix"
 idx_prop = { # Index properties for the new index
         "settings": {
+            "index.query.default_field": "title_text",
             "analysis": {
                 "analyzer": {
                     "patterns_analyzer": {
@@ -36,15 +37,14 @@ idx_prop = { # Index properties for the new index
             },
         "mappings": {
             "blocket_ad": {
+                "_all": {
+                    "enabled": False
+                    },
                 "properties": {
                     "ad_text": {
                         "type": "text",
-                        "fields": {
-                            "filtered": {
-                                "type": "text",
-                                "analyzer": "patterns_analyzer"
-                                }
-                            }
+                        "analyzer": "patterns_analyzer",
+                        "copy_to": "title_text"
                         },
                     "datetime": {
                         "type" : "date"
@@ -54,16 +54,14 @@ idx_prop = { # Index properties for the new index
                         },
                     "title": {
                         "type": "text",
+                        "analyzer" : "patterns_analyzer",
                         "fields": {
                             "keyword": {
                                 "type": "keyword",
                                 "ignore_above": 256
-                                },
-                            "filtered": {
-                                "type": "text",
-                                "analyzer": "patterns_analyzer"
                                 }
-                            }
+                            },
+                        "copy_to": "title_text"
                         },
                     "loc_name": {
                         "type": "text",
@@ -80,6 +78,25 @@ idx_prop = { # Index properties for the new index
                     "company_ad": {
                         "type": "boolean"
                         },
+                    "url": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 512
+                                }
+                            }
+                        },
+                    "title_text": {
+                        "type" : "text",
+                        "analyzer": "patterns_analyzer"
+                        },
+                    "text_rank": {
+                        "type": "float"
+                        },
+                    "title_rank": {
+                        "type": "float"
+                        }
                     }
                 }
             }
